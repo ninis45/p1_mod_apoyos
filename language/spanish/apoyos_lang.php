@@ -4,6 +4,9 @@ $lang['apoyos:create']			=	'Nueva Comprobación';
 $lang['apoyos:details']			=	'Detalles del Comprobación';
 $lang['apoyos:edit']			=	'Modificando el registro de Comprobación';
 $lang['apoyos:not_found']		=	'Actualmente no hay registro';
+
+$lang['apoyos:all_required']			=	'Todos los archivo son requeridos';
+
 //$lang['apoyos:info']				=	'Se va agregar un registro dentro del mes de "%s" para el director "%s"';
 $lang['apoyos:save_success']		=	'El registro  ha sido guardado correctamente, ahora ya puedes agregar los comprobantes.';
 
