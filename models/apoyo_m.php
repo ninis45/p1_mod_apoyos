@@ -3,9 +3,9 @@
 class Apoyo_m extends MY_Model {
 
 	public function __construct()
-	{		
+	{
 		parent::__construct();
-		
+
 		/**
 		 * If the sample module's table was named "samples"
 		 * then MY_Model would find it automatically. Since
@@ -14,7 +14,7 @@ class Apoyo_m extends MY_Model {
 		$this->_table = 'apoyos';
 
 	}
-	
+
 	//create a new item
 	public function create($input)
 	{
@@ -27,18 +27,18 @@ class Apoyo_m extends MY_Model {
             'fecha_registro' => date('Y-m-d'),
             'estatus'         => 'Pendiente',
             'created_on' => now()
-            
-            
+
+
         );
-        
-       
+
+
         return $this->insert($data);
     }
 
     public function edit($id,$input)
     {
         $data = array(
- 
+
             'fecha_registro'    => $input['fecha_registro'],
             'estatus'            => $input['estatus'],
             'xml'               => isset($input['xml'])?$input['xml']:NULL,
@@ -47,8 +47,8 @@ class Apoyo_m extends MY_Model {
 
 
         );
-        
-        
+
+
         return $this->db->where('id',$id)
                 ->set($data)
                 ->update($this->_table);
@@ -62,9 +62,9 @@ class Apoyo_m extends MY_Model {
             'id_centro' => 0,
             'estatus'     => $status,
             'updated_on'  => now(),
-            
+
         );
-        
+
         if($apoyo = $this->get_by('id_deposito',$id))
         {
              $this->update($id,$data);
@@ -75,19 +75,19 @@ class Apoyo_m extends MY_Model {
         else
         {
              $id_apoyo = $this->insert($data);
-             
+
              $this->add_facturas($id_apoyo,$input['facturas']);
              $this->add_depositos($id_apoyo,$input['depositos']);
              return $id_apoyo;
         }
-        
-        
-       
+
+
+
     }
     function add_depositos($id,$depositos)
     {
          $this->db->where('id_apoyo',$id)->delete('apoyo_depositos');
-         
+
          foreach($depositos as $deposito)
         {
             $data = array(
@@ -95,11 +95,11 @@ class Apoyo_m extends MY_Model {
                 'banco'      => $deposito['banco'],
                 'no_operacion'      => $deposito['operacion'],
                 'created_on'   => now(),
-                'total'      => $deposito['total'],
+                'total'      => str_replace(',','',$deposito['total']),
             );
             $this->db->set($data)->insert('apoyo_depositos');
         }
-         
+
     }
     function add_facturas($id,$facturas)
     {
@@ -118,7 +118,7 @@ class Apoyo_m extends MY_Model {
     }
     /*function get_reporte($base_where=array())
     {
-        
+
         $result = $this->db->select('*,centros.nombre AS nombre_centro,directores.nombre AS nombre_director,depositos.tipo AS tipo,depositos.banco AS banco,depositos.no_tarjeta AS no_tarjeta')
                     ->order_by('ordering_count,fecha_deposito')
                     ->where($base_where)
@@ -126,12 +126,12 @@ class Apoyo_m extends MY_Model {
                     ->join('directores','directores.id=depositos.id_director')
                     ->get($this->_table)
                     ->result();
-                    
+
         return $result;
     }*/
 
 
 
-    
+
  }
  ?>

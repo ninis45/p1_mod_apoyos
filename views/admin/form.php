@@ -122,10 +122,12 @@
                                             
                                         </td>
                                         <td>
+                                        
+                                            <div ng-if="!file.messages" class="text-warning">Al parecer el documento XML no ha sido validado. Para realizarlo pulse el boton <a href="<?=base_url('admin/apoyos/valid_xml/'.$apoyo->id.'/{{file.id}}/{{file.xml}}')?>" class="btn btn-default">Validar documento</a></div>
                                             <span class="text-success"  ng-class="{'text-danger':message.code==0}" ng-repeat="message in file.messages">
-                                            <i ng-if="message.code==1" class="fa fa-check"></i>
-                                            <i ng-if="message.code==0" class="fa fa-warning"></i>
-                                            {{message.message}}
+                                            <i ng-if="message.code==1" class="fa fa-check"></i> 
+                                            <i ng-if="message.code==0" class="fa fa-remove"></i>
+                                            {{message.message}} 
                                             
                                             </span>
                                         </td>

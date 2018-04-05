@@ -9,7 +9,7 @@ class Admin extends Admin_Controller {
        //  $this->load->helper('fondo');
        // $this->load->config('apoyos');
         $this->lang->load(array('apoyos','calendar'));
-        $this->load->model(array('apoyos_m',
+        $this->load->model(array('apoyo_m',
                     'centros/centro_m',
                     'depositos/deposito_m',
                     'files/file_folders_m'
@@ -86,8 +86,50 @@ class Admin extends Admin_Controller {
 
         
     }
+    function valid_xml($id_apoyo,$id_factura, $id_file)
+    {
+        $this->load->library('facturas/factura');
+        $result_valid = Factura::ValidXML($id_file);
+        
+       
+       
+        if($match = $this->db->select('*')   
+                ->where_not_in('apoyo_facturas.id',$id_factura)    
+                ->where_in('estatus',array('aprobado','pendiente'))
+                ->where('xml_uuid',$result_valid['data']['UUID'])
+                ->join('apoyos','apoyos.id=apoyo_facturas.id_apoyo')
+                ->get('apoyo_facturas')->row())
+        {
+            
+            $result_valid['messages'][] = array('code'=>'0','message'=>sprintf(lang('factura:uuid_duplicate'),$match->nombre,$match->id));
+        
+           
+        }
+        
+        $this->db->where('apoyo_facturas.id',$id_factura)->set(array('messages' => json_encode($result_valid['messages'])))->update('apoyo_facturas');
+        
+       
+        
+        redirect('admin/apoyos/edit/'.$id_apoyo);
+    }
     
-    
+    private function verify_duplicate($uuid)
+    {
+         if($match = $this->db->select('*')   
+                //->where_not_in('apoyos.id',$id_apoyo)    
+                ->where_in('estatus',array('aprobado','pendiente'))
+                ->where('xml_uuid',$uuid)
+                ->join('apoyos','apoyos.id=apoyo_facturas.id_apoyo')
+                ->get('apoyo_facturas')->row())
+        {
+            
+            return array('code'=>'0','message'=>sprintf(lang('factura:uuid_duplicate'),$match->nombre,$match->id));
+        
+           
+        }
+        
+        return false;
+    }
     private function  _valid_xml()
     {
         
@@ -415,7 +457,7 @@ class Admin extends Admin_Controller {
              unset($_POST['btnAction']);
             
             
-            if($id = $this->apoyos_m->create($this->input->post()))
+            if($id = $this->apoyo_m->create($this->input->post()))
             {
                 
                 $this->session->set_flashdata('success',sprintf(lang('apoyos:save_success'),$this->input->post('concepto')));
@@ -457,7 +499,7 @@ class Admin extends Admin_Controller {
 
         role_or_die($this->section, 'edit');
         $files = array();
-        $apoyo = $this->apoyos_m
+        $apoyo = $this->apoyo_m
                             ->get_by('apoyos.id',$id) OR redirect('admin/apoyos');
                             
         if($apoyo->estatus == 'Validado')
@@ -478,7 +520,7 @@ class Admin extends Admin_Controller {
                 'observaciones' => $this->input->post('observaciones'),
                 'updated_on' => now()
             );
-            if($this->apoyos_m->update($id,$data))
+            if($this->apoyo_m->update($id,$data))
             {
                 
                 $this->session->set_flashdata('success',lang('global:save_success'));
@@ -603,6 +645,10 @@ class Admin extends Admin_Controller {
                 {
                     $valid_xml = Factura::ValidXML($result['data']['id'],array('total'));
                     
+                   // print_r($this->verify_duplicate($valid_xml['data']['UUID']));
+                    $valid_xml['messages'][] = $this->verify_duplicate($valid_xml['data']['UUID']);
+                    
+                    //print_r($valid_xml['messages']);
                     if($valid_xml['status'])
                     {
                         $result['message'] = $valid_xml['messages'];

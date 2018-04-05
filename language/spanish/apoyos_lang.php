@@ -4,6 +4,8 @@ $lang['apoyos:create']			=	'Nueva Comprobación';
 $lang['apoyos:details']			=	'Detalles del Comprobación';
 $lang['apoyos:edit']			=	'Modificando el registro de Comprobación';
 $lang['apoyos:not_found']		=	'Actualmente no hay registro';
+$lang['apoyos:admin']		=	'Administrando %s';
+
 
 $lang['apoyos:all_required']			=	'Todos los archivo son requeridos';
 
@@ -23,4 +25,5 @@ $lang['apoyos:report_found'] = 'La consulta ha traido el siguiente resultado del
 $lang['apoyos:init']   = 'Para agregar las facturas, es necesario crear y guardar el registro. Haga clic en <em>Siguiente</em>';
 $lang['apoyos:maximo'] = 'Se ha rebasado el monto máximo del saldo por lo que se redondeara a {{importe|number:2}}';
 $lang['apoyos:delete_success'] = 'El registro de apoyo ha sido borrado, ahora podras consultarlo en Pendientes  de apoyo.';
+$lang['apoyos:error_deposito'] = 'Debe de ingresar todos los datos del depósito';
 ?>
