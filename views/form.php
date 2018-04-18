@@ -184,7 +184,7 @@
             <a href="<?=base_url('apoyos/'.$anio)?>" class="btn btn-color-grey-light"><i class="fa fa-th-list"></i> Ir a listado</a>
             <?php if($this->method == 'edit'){?>
 
-            <button type="submit" class="btn btn-success" value="save" confirm-action>Guardar</button>
+            <button type="submit" class="btn btn-success" value="save" id="btn-save" confirm-action>Guardar</button>
             <?php }?>
        </div>
     <?php echo form_close();?>
@@ -203,7 +203,7 @@
         </div>
         <div class="modal-body" id="files-uploader">
             <div id="notices-modal"></div>
-            <div class="form-group"">
+            <div class="form-group">
                 <label>Tipo de documento</label>
                 <div class="radio">
                     <label><input type="radio" name="tipo" value="factura" /> Factura</label>
@@ -247,8 +247,9 @@
 
         </div>
         <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="add-docs" name="send">Agregar</button>
-        <button type="button" class="btn btn-color-grey-light" data-dismiss="modal">Cerrar</button>
+            <p id="working">{{theme:image file="loading.gif" width="40"}} Trabajando... Por favor no cierres esta ventana, al terminar esta se cerrará sola.</p>
+            <button type="button" class="btn btn-primary" id="add-docs" name="send">Agregar</button>
+            <button type="button" class="btn btn-color-grey-light" data-dismiss="modal">Cerrar</button>
         </div>
       </div>
 

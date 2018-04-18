@@ -41,6 +41,7 @@ class Apoyos_front extends Public_Controller
     public function index()
     {
          $depositos = $this->deposito_m->select('YEAR(fecha_deposito) AS anio')
+                        ->where('id_director',$this->director->id)
                         ->group_by('YEAR(fecha_deposito)')->get_all();
          $this->template->title($this->module_details['name'])
                 ->set('depositos',$depositos)
@@ -100,6 +101,7 @@ class Apoyos_front extends Public_Controller
                         ->join('directores','directores.id=depositos.id_director')
                         ->join('centros','centros.id=directores.id_centro')
                         ->join('apoyos','apoyos.id_deposito=depositos.id')
+                        ->where('depositos.id_director',$this->director->id)
                         ->get_by('apoyos.id',$id) OR show_404();
 
           list($y,$m,$y) = explode('-',$deposito->fecha_deposito);
@@ -125,6 +127,7 @@ class Apoyos_front extends Public_Controller
                         ->join('directores','directores.id=depositos.id_director')
                         ->join('centros','centros.id=directores.id_centro')
                         ->join('apoyos','apoyos.id_deposito=depositos.id','LEFT')
+                        ->where('depositos.id_director',$this->director->id)
                         ->get_by('depositos.id',$id) OR show_404();
 
         if($deposito->id)

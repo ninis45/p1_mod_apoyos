@@ -7,6 +7,11 @@
          </h2></header>
 
         {{ theme:partial name="notices" }}
+        <?php if(!$director): ?>
+        <div class="alert alert-danger"><?=lang('apoyos:error_access')?></div>
+        <?php else:?>
+        <div class="alert alert-info"><?=sprintf(lang('apoyos:welcome_front'),$director->nombre)?></div>
+        <?php endif;?>
          <?php if(is_numeric($anio)){ ?>
         <ul class="nav nav-tabs">
           <li class="<?=$status=='pendientes'?'active':''?>"><a href="<?=base_url('apoyos/'.$anio.'?tab=pendientes')?>">Pendientes</a></li>

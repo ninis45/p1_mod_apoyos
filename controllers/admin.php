@@ -385,12 +385,17 @@ class Admin extends Admin_Controller {
             }
             else
             {
-                $comprobado = $this->db->select('SUM(total) AS total')->where('id_apoyo',$deposito->id_apoyo)->get('apoyo_facturas')->row();
+                $comprobado = array(
+                    'depositos' => false,
+                    'facturas'  => false
                 
-                if($comprobado)
-                {
-                    $deposito->comprobado = $comprobado->total;
-                }
+                );
+                $comprobado['facturas'] = $this->db->select('SUM(total) AS total')->where('id_apoyo',$deposito->id_apoyo)->get('apoyo_facturas')->row();
+                $comprobado['depositos'] = $this->db->select('SUM(total) AS total')->where('id_apoyo',$deposito->id_apoyo)->get('apoyo_depositos')->row();
+                
+                
+                $deposito->comprobado = $comprobado['facturas']->total+$comprobado['depositos']->total;
+                
                 if($deposito->estatus == 'Validado')
                 {
                     $data['Validados'][$deposito->concepto][]= $deposito;
@@ -522,6 +527,8 @@ class Admin extends Admin_Controller {
             );
             if($this->apoyo_m->update($id,$data))
             {
+                $this->apoyo_m->add_depositos($id, $this->input->post('depositos'));
+                $this->apoyo_m->add_facturas($id, $this->input->post('facturas'));
                 
                 $this->session->set_flashdata('success',lang('global:save_success'));
                 
@@ -531,7 +538,14 @@ class Admin extends Admin_Controller {
                 $this->session->set_flashdata('error',lang('global:save_error'));
                 
             }
-            redirect('admin/apoyos/edit/'.$id);
+            if($data['estatus'] == 'Validado')
+            {
+                redirect('admin/apoyos/details/'.$id);
+            }
+            else
+            {
+                redirect('admin/apoyos/edit/'.$id);
+            }
         }
         $deposito =  $this->deposito_m->select('*,centros.nombre AS nombre_centro,directores.nombre AS nombre_director')
                         ->join('directores','directores.id=depositos.id_director')
@@ -551,6 +565,7 @@ class Admin extends Admin_Controller {
                     'pdf'   => $factura->pdf,
                     'xml'   => $factura->xml,
                     'total' => $factura->total,
+                    'xml_uuid' => $factura->xml_uuid,
                     'messages' => json_decode($factura->messages)
                 );
             }
@@ -559,9 +574,12 @@ class Admin extends Admin_Controller {
         
         list($year,$month,$day) = explode('-',$deposito->fecha_deposito);
         
+        $fichas = $this->db->select('*,no_operacion AS operacion')
+                        ->where('id_apoyo',$apoyo->id)->get('apoyo_depositos')->result();
+        
         $this->template->title($this->module_details['name'])
               ->append_js('module::apoyo.controller.js')
-              ->append_metadata('<script type="text/javascript">var id=\''.$id.'\',files='.json_encode($files).';</script>')
+              ->append_metadata('<script type="text/javascript">var depositos='.json_encode($fichas).', id=\''.$id.'\',files='.json_encode($files).';</script>')
               ->set('anio',$year)
               ->set('apoyo',$apoyo)
               ->set('deposito',$deposito)
@@ -577,7 +595,7 @@ class Admin extends Admin_Controller {
     function details($id=0)
     {
          $files = array();
-         $apoyo = $this->apoyos_m
+         $apoyo = $this->apoyo_m
                             ->get_by('apoyos.id',$id) OR redirect('admin/apoyos');
            
           
@@ -586,10 +604,11 @@ class Admin extends Admin_Controller {
                         ->join('centros','centros.id=directores.id_centro')
                         ->get_by('depositos.id',$apoyo->id_deposito);
        
-
+        $fichas = $this->db->select('*,no_operacion AS operacion')
+                        ->where('id_apoyo',$apoyo->id)->get('apoyo_depositos')->result();
         $facturas = $this->db->where('id_apoyo',$id)
                                 ->get('apoyo_facturas')->result();
-                                
+                              
         if($facturas)
         {
             foreach($facturas as $factura)
@@ -599,6 +618,7 @@ class Admin extends Admin_Controller {
                     'pdf'   => $factura->pdf,
                     'xml'   => $factura->xml,
                     'total' => $factura->total,
+                    'xml_uuid' => $factura->xml_uuid,
                     'messages' => json_decode($factura->messages)
                 );
             }
@@ -607,7 +627,7 @@ class Admin extends Admin_Controller {
         list($year,$month,$day) = explode('-',$deposito->fecha_deposito);                 
          $this->template->title($this->module_details['name'])
               ->append_js('module::apoyo.controller.js')
-              ->append_metadata('<script type="text/javascript">var id=\''.$id.'\',files='.json_encode($files).';</script>')
+              ->append_metadata('<script type="text/javascript">var depositos='.json_encode($fichas).',id=\''.$id.'\',files='.json_encode($files).';</script>')
               ->set('anio',$year)
               ->set('apoyo',$apoyo)
               ->set('deposito',$deposito)
@@ -636,8 +656,7 @@ class Admin extends Admin_Controller {
             {
                 $data = array(
                     'id_apoyo' => $input['id'],
-                    //'id_factura' => $input['id_factura']
-                    //{$input->type}=> $result['data']['id'],
+                    
                     
                 );
                 
@@ -652,7 +671,7 @@ class Admin extends Admin_Controller {
                     if($valid_xml['status'])
                     {
                         $result['message'] = $valid_xml['messages'];
-                        $data['xml_uuid']  = $valid_xml['data']['UUID'];
+                        $result['data']['xml_uuid']  = $valid_xml['data']['UUID'];
                         $data['total']     = $valid_xml['data']['total'];
                         $result['data']['total'] = $valid_xml['data']['total'];
                     }
@@ -667,7 +686,7 @@ class Admin extends Admin_Controller {
                     $data['pdf'] = $result['data']['id'];
                 }
                 
-                if(!$input['id_factura'])
+                /*if(!$input['id_factura'])
                 {
                     $this->db->set($data)->insert('apoyo_facturas');
                     $result['data']['id_factura'] = $this->db->insert_id();
@@ -675,7 +694,7 @@ class Admin extends Admin_Controller {
                 else
                 {
                     $this->db->where('id',$input['id_factura'])->set($data)->update('apoyo_facturas');
-                }
+                }*/
                 
                 
             }
@@ -737,11 +756,23 @@ class Admin extends Admin_Controller {
              
         foreach($apoyos_bd as &$apoyo)
         {
-            $comprobado = $this->db->select('SUM(total) AS suma')->where('id_apoyo',$apoyo->id_apoyo)
-                                ->get('apoyo_facturas')->row();
+            
+                $comprobado = array(
+                    'depositos' => false,
+                    'facturas'  => false
+                
+                );
+                $comprobado['facturas'] = $this->db->select('SUM(total) AS total')->where('id_apoyo',$apoyo->id_apoyo)->get('apoyo_facturas')->row();
+                $comprobado['depositos'] = $this->db->select('SUM(total) AS total')->where('id_apoyo',$apoyo->id_apoyo)->get('apoyo_depositos')->row();
+                $total_comprobado= $comprobado['facturas']->total + $comprobado['depositos']->total;
+                 
+            //$comprobado = $this->db->select('SUM(total) AS suma')->where('id_apoyo',$apoyo->id_apoyo)
+                                //->get('apoyo_facturas')->row();
                                 
-            $apoyo->comprobado = ($comprobado)?($comprobado->suma>$apoyo->importe?$apoyo->importe:$comprobado->suma):0;
+            //$apoyo->comprobado = ($comprobado)?($comprobado->suma>$apoyo->importe?$apoyo->importe:$comprobado->suma):0;
             //$apoyo->comprobado = ($comprobado)?$comprobado->suma:0;
+            
+            $apoyo->comprobado = $total_comprobado>$apoyo->importe?$apoyo->importe:$total_comprobado;
         }
        
              
@@ -837,11 +868,23 @@ class Admin extends Admin_Controller {
              
              foreach($apoyos_bd as $apoyo)
              {
-                 $comprobado = $this->db->select('SUM(total) AS suma')->where('id_apoyo',$apoyo->id_apoyo)
-                                    ->get('apoyo_facturas')->row();
+                $comprobado = array(
+                    'depositos' => false,
+                    'facturas'  => false
+                
+                );
+                $comprobado['facturas'] = $this->db->select('SUM(total) AS total')->where('id_apoyo',$apoyo->id_apoyo)->get('apoyo_facturas')->row();
+                $comprobado['depositos'] = $this->db->select('SUM(total) AS total')->where('id_apoyo',$apoyo->id_apoyo)->get('apoyo_depositos')->row();
+                
+                
+                $total_comprobado= $comprobado['facturas']->total + $comprobado['depositos']->total;
+                 //$comprobado = $this->db->select('SUM(total) AS suma')->where('id_apoyo',$apoyo->id_apoyo)
+                   //                 ->get('apoyo_facturas')->row();
                                     
                 
-                $apoyo->comprobado = ($comprobado)?($comprobado->suma>$apoyo->importe?$apoyo->importe:$comprobado->suma):0;
+                //$apoyo->comprobado = ($comprobado)?($comprobado->suma>$apoyo->importe?$apoyo->importe:$comprobado->suma):0;
+                
+                $apoyo->comprobado = $total_comprobado>$apoyo->importe?$apoyo->importe:$total_comprobado;
                 $data[$apoyo->concepto][]=$apoyo;
             }
         }
@@ -857,7 +900,7 @@ class Admin extends Admin_Controller {
     }
     function delete($anio,$id)
     {
-        $apoyo = $this->apoyos_m->get($id);
+        $apoyo = $this->apoyo_m->get($id);
         
         if($apoyo)
         {
@@ -867,17 +910,13 @@ class Admin extends Admin_Controller {
             {
                 foreach($facturas as $factura)
                 {
-                   /*$factura->xml AND Files::delete_file($factura->xml);
-                   $factura->pdf AND Files::delete_file($factura->pdf);
                    
-                   $this->db->where('id',$factura->id)
-                                ->delete('apoyo_facturas');*/
                                 
                    $this->remove_factura($factura->id);
                 }
                 
             }
-            $this->apoyos_m->delete($apoyo->id);
+            $this->apoyo_m->delete($apoyo->id);
             
             $this->session->set_flashdata('success',lang('apoyos:delete_success'));
         }

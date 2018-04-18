@@ -110,9 +110,13 @@ class Apoyo_m extends MY_Model {
                 'id_apoyo' => $id,
                 'xml'      => $factura['xml'],
                 'pdf'      => $factura['pdf'],
-                'xml_uuid'   => $factura['folio_uuid'],
-                'total'      => $factura['total'],
+                'xml_uuid'   => $factura['xml_uuid'],
+                'total'      => str_replace(',','',$factura['total']),
             );
+            
+            if($factura['messages'])
+                $data['messages'] = json_encode($factura['messages']);
+              
             $this->db->set($data)->insert('apoyo_facturas');
         }
     }

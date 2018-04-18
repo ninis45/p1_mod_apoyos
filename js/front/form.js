@@ -7,8 +7,10 @@ $(document).ready(function(){
 
      load_facturas(facturas);
      load_depositos(depositos);
+     valid_btn();
      var display_importe = total_importe.toFixed(2).replace(/\B(?=(\d{3})+(?!\d)\.?)/g, ",");
     $('#display_importe').html('$ '+display_importe);
+
     $('#Modal').on('hidden.bs.modal', function (e) {
          $('input[name="tipo"]').attr('checked',false);
     });
@@ -17,10 +19,15 @@ $(document).ready(function(){
       $('input[name="total"]').val('');
       $('input[name="no_operacion"]').val('');
       $('input[name="banco"]').val('');
+      
+      $('#xml_file').val('');
+      $('#pdf_file').val('');
 
-        //$('input[name="tipo"]').val('');
+       
         tipo = '';
         $('.block-deposito,.block-factura').addClass('hide');
+        
+        $('#working').hide();
     });
     $('body').delegate('.remove-factura','click',function(e){
 
@@ -35,7 +42,7 @@ $(document).ready(function(){
 
         load_facturas(facturas);
         //tr.remove();
-
+        valid_btn();
 
     });
     $('body').delegate('.remove-deposito','click',function(e){
@@ -50,7 +57,7 @@ $(document).ready(function(){
         depositos.splice(index,1);
 
         load_depositos(depositos);
-        //tr.remove();
+         valid_btn();
 
 
     });
@@ -79,7 +86,7 @@ $(document).ready(function(){
 
             if(tipo=='deposito')
             {
-
+                
                  var total     = $('input[name="total"]').val(),
                      operacion = $('input[name="no_operacion"]').val(),
                      banco     = $('input[name="banco"]').val();
@@ -106,12 +113,14 @@ $(document).ready(function(){
 
                   //load_facturas(facturas);
                      }
-                   }
+                      valid_btn();
+                }
               if(tipo=='factura')
                {
+                    $('#working').show();
                    upload_files();
                }
-
+               
                    
 
 
@@ -119,7 +128,14 @@ $(document).ready(function(){
 
 
  });
-
+function valid_btn()
+{
+     $('#btn-save').attr('disabled',true);
+     if((total_depositos+total_facturas)>0)
+     {
+        $('#btn-save').attr('disabled',false);
+     }
+}
 function upload_files()
 {
         var data   = new FormData();
@@ -146,7 +162,7 @@ function upload_files()
             success: function(data, textStatus, jqXHR)
             {
 
-
+                $('#working').hide();
                 var response = data;
                 //parent.find('div.jumbotron').append(data.message);
                 if(data.status == false)
@@ -158,6 +174,7 @@ function upload_files()
                 {
                     facturas.push({tipo:tipo, xml:response.data.xml.data.id,pdf:response.data.pdf.data.id,total:response.data.xml.data.total,folio_uuid:response.data.xml.data.folio_uuid});
                     load_facturas(facturas);
+                     valid_btn();
 
 
                     $('#Modal').modal('hide');
