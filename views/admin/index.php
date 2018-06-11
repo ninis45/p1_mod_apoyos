@@ -35,7 +35,8 @@
                   
                   <uib-accordion close-others="!oneAtATime" class="ui-accordion">
                       <?php foreach($data['Pendientes'] as $concepto=>$depositos ){?>
-                      <uib-accordion-group    heading="<?=str_replace('"','',$concepto)?> (<?=count($depositos)?>)"  > 
+                     
+                      <uib-accordion-group     heading="<?=str_replace('"','',$concepto)?> (<?=count($depositos)?>)"  > 
                             
                             <div class="divider text-right">
                                 Total registros:   <?=count($depositos)?>  
@@ -92,7 +93,7 @@
                 <?php if($data['Recibidos']){?>
                      
                       <?php foreach($data['Recibidos'] as $concepto=>$depositos ){?>
-                      <uib-accordion-group   heading="<?=$concepto?>"  > 
+                      <uib-accordion-group   heading="<?=str_replace('"','',$concepto)?>"  > 
                             <div class="divider text-right">
                                 Total registros:   <?=count($depositos)?>  
                                 <!--a class="" target="_blank" href="<?=base_url('admin/apoyos/download/'.$anio.'?centro='.$this->input->get('f_centro').'&concepto='.urlencode($concepto))?>"><i class="fa fa-download"></i> Desgargar XLS</a-->
@@ -166,7 +167,7 @@
                 <uib-accordion close-others="!oneAtATime" class="ui-accordion">
                 <?php if($data['Validados']){?>
                     <?php foreach($data['Validados'] as $concepto=>$depositos ){?>
-                    <uib-accordion-group  heading="<?=$concepto?>"  > 
+                    <uib-accordion-group  heading="<?=str_replace('"','',$concepto)?>"  > 
                             <div class="divider text-right">
                                 Total registros:   <?=count($depositos)?>  
                                 <!--a class="" target="_blank" href="<?=base_url('admin/apoyos/download/'.$anio.'?concepto='.urlencode($concepto))?>"><i class="fa fa-download"></i> Desgargar XLS</a-->

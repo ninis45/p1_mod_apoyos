@@ -26,7 +26,8 @@ class Apoyo_m extends MY_Model {
             'id_deposito'    => $input['id_deposito'],
             'fecha_registro' => date('Y-m-d'),
             'estatus'         => 'Pendiente',
-            'created_on' => now()
+            'created_on' => now(),
+            'updated_on' => now()
 
 
         );
@@ -74,6 +75,7 @@ class Apoyo_m extends MY_Model {
         }
         else
         {
+            $data['created_on'] = now();
              $id_apoyo = $this->insert($data);
 
              $this->add_facturas($id_apoyo,$input['facturas']);

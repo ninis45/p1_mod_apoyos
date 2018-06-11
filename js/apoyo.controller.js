@@ -75,7 +75,7 @@
             $uibModalInstance.close();
             
             
-            console.log($scope.form);
+            
             /* file.upload = Upload.upload({
               url: SITE_URL+'admin/apoyos/upload',
               data: { file: file,csrf_hash_name:$cookies.get(pyro.csrf_cookie_name)},
@@ -161,21 +161,7 @@
           {
               $scope.files.splice(index,1);
             
-             /*var index = files.indexOf(item);
-             
-             $http.get(SITE_URL+'admin/apoyos/remove_factura',{params:{id_factura:item.id}}).then(function(response){
-                
-                var response = response.data,
-                    status   = response.status;
-                
-                
-                if(status)
-                {
-                    $scope.files.splice(index,1);
-                }
-                
-                
-             });*/
+            
           }
           $scope.edit = function(item)
           {

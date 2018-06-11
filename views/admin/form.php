@@ -237,6 +237,10 @@
 
         </div>   
         
+        <?php if($apoyo->updated_on): ?>
+            <hr />
+            <p class="text-right">Actualizado: <?php echo format_date($apoyo->updated_on,'d/M/Y')?></p>
+        <?php endif;?>
         <div class="divider"></div>
     
        <div class="buttons">

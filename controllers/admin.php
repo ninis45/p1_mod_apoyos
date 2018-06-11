@@ -91,24 +91,28 @@ class Admin extends Admin_Controller {
         $this->load->library('facturas/factura');
         $result_valid = Factura::ValidXML($id_file);
         
-       
-       
-        if($match = $this->db->select('*')   
-                ->where_not_in('apoyo_facturas.id',$id_factura)    
-                ->where_in('estatus',array('aprobado','pendiente'))
-                ->where('xml_uuid',$result_valid['data']['UUID'])
-                ->join('apoyos','apoyos.id=apoyo_facturas.id_apoyo')
-                ->get('apoyo_facturas')->row())
-        {
-            
-            $result_valid['messages'][] = array('code'=>'0','message'=>sprintf(lang('factura:uuid_duplicate'),$match->nombre,$match->id));
-        
+       if($result_valid['status']){
            
+            if($match = $this->db->select('*')   
+                    ->where_not_in('apoyo_facturas.id',$id_factura)    
+                    ->where_in('estatus',array('aprobado','pendiente'))
+                    ->where('xml_uuid',$result_valid['data']['UUID'])
+                    ->join('apoyos','apoyos.id=apoyo_facturas.id_apoyo')
+                    ->get('apoyo_facturas')->row())
+            {
+                
+                $result_valid['messages'][] = array('code'=>'0','message'=>sprintf(lang('factura:uuid_duplicate'),$match->nombre,$match->id));
+            
+               
+            }
+            
+            $this->db->where('apoyo_facturas.id',$id_factura)->set(array('messages' => json_encode($result_valid['messages'])))->update('apoyo_facturas');
+            
         }
-        
-        $this->db->where('apoyo_facturas.id',$id_factura)->set(array('messages' => json_encode($result_valid['messages'])))->update('apoyo_facturas');
-        
-       
+        else
+        {
+            $this->session->set_flashdata('error',lang('factura:not_found'));
+        }
         
         redirect('admin/apoyos/edit/'.$id_apoyo);
     }
@@ -659,13 +663,15 @@ class Admin extends Admin_Controller {
                     
                     
                 );
-                
+               
                 if($result['data']['extension']=='.xml')
                 {
                     $valid_xml = Factura::ValidXML($result['data']['id'],array('total'));
                     
                    // print_r($this->verify_duplicate($valid_xml['data']['UUID']));
-                    $valid_xml['messages'][] = $this->verify_duplicate($valid_xml['data']['UUID']);
+                    $duplicate = $this->verify_duplicate($valid_xml['data']['UUID']);
+                    if($duplicate)
+                        $valid_xml['messages'][] = $duplicate;
                     
                     //print_r($valid_xml['messages']);
                     if($valid_xml['status'])
@@ -764,15 +770,15 @@ class Admin extends Admin_Controller {
                 );
                 $comprobado['facturas'] = $this->db->select('SUM(total) AS total')->where('id_apoyo',$apoyo->id_apoyo)->get('apoyo_facturas')->row();
                 $comprobado['depositos'] = $this->db->select('SUM(total) AS total')->where('id_apoyo',$apoyo->id_apoyo)->get('apoyo_depositos')->row();
-                $total_comprobado= $comprobado['facturas']->total + $comprobado['depositos']->total;
+                $total_comprobado_facturas = $comprobado['facturas']->total;
+                $total_comprobado_depositos = $comprobado['depositos']->total;
                  
-            //$comprobado = $this->db->select('SUM(total) AS suma')->where('id_apoyo',$apoyo->id_apoyo)
-                                //->get('apoyo_facturas')->row();
+             $comprobado = $total_comprobado_facturas+$total_comprobado_depositos;
                                 
-            //$apoyo->comprobado = ($comprobado)?($comprobado->suma>$apoyo->importe?$apoyo->importe:$comprobado->suma):0;
-            //$apoyo->comprobado = ($comprobado)?$comprobado->suma:0;
+            $apoyo->comprobado = ($comprobado)?($comprobado>$apoyo->importe?$apoyo->importe:$comprobado):0;
             
-            $apoyo->comprobado = $total_comprobado>$apoyo->importe?$apoyo->importe:$total_comprobado;
+            $apoyo->comprobado_facturas = $total_comprobado_facturas>$apoyo->importe?$apoyo->importe:$total_comprobado_facturas;
+            $apoyo->comprobado_depositos = $total_comprobado_depositos>$apoyo->importe?$apoyo->importe:$total_comprobado_depositos;
         }
        
              
@@ -802,8 +808,18 @@ class Admin extends Admin_Controller {
                              
         $inc = 0;
         $extra = 3;
+        $total = array(
+        
+            'facturas'  => 0,
+            'depositos' => 0,
+            'importe'   => 0,
+            'saldo'     => 0,
+            
+        );
+        $meses = array();
         foreach($apoyos_bd as $row)
         {
+            
                 $this->excel->getActiveSheet()->insertNewRowBefore($inc+$extra,1);
                 $this->excel->getActiveSheet()->setCellValue('A'.($inc+$extra),($row->tipo=='Plantel'?'P':'CE').pref_centro($row->clave,''));
                 $this->excel->getActiveSheet()->setCellValue('B'.($inc+$extra), $row->nombre_centro);
@@ -812,16 +828,34 @@ class Admin extends Admin_Controller {
                 $this->excel->getActiveSheet()->setCellValue('E'.($inc+$extra), $row->banco);
                 $this->excel->getActiveSheet()->setCellValue('F'.($inc+$extra), ' '.$row->no_tarjeta);
                 $this->excel->getActiveSheet()->setCellValue('G'.($inc+$extra), number_format($row->importe,2,'.',''));
-                $this->excel->getActiveSheet()->setCellValue('H'.($inc+$extra), number_format($row->comprobado,2,'.',''));
+                $this->excel->getActiveSheet()->setCellValue('H'.($inc+$extra), number_format($row->comprobado_facturas,2,'.',''));
+                $this->excel->getActiveSheet()->setCellValue('I'.($inc+$extra), number_format($row->comprobado_depositos,2,'.',''));
                 
-                $this->excel->getActiveSheet()->setCellValue('I'.($inc+$extra), number_format($row->importe-$row->comprobado,2,'.',''));
+                $this->excel->getActiveSheet()->setCellValue('J'.($inc+$extra), number_format($row->importe-$row->comprobado,2,'.',''));
                 //$this->excel->getActiveSheet()->setCellValue('H'.($inc+$extra), $row['tipo']=='fondo'?'Fondo Revolvente':'Apoyo');
-                $this->excel->getActiveSheet()->setCellValue('J'.($inc+$extra), $row->concepto);
+                $this->excel->getActiveSheet()->setCellValue('K'.($inc+$extra), $row->concepto);
+                
+                $total['importe']+=$row->importe;
+                $total['facturas']+=$row->comprobado_facturas;
+                $total['depositos']+=$row->comprobado_depositos;
+                $total['saldo']+=$row->importe-$row->comprobado;
+                
+                list($y,$m,$d) = explode('-',$row->fecha_deposito);
+                
+                if(!in_array(month_long($m),$meses))
+                    $meses[$m]= month_long($m);
                 
                 $inc++;
         }
         
+        $this->excel->getActiveSheet()->setCellValue('B'.($inc+$extra),'DEPOSITOS REALIZADOS DEL PERIODO: '.format_date_calendar($fecha_ini).'  AL '.format_date_calendar($fecha_fin));
+        $this->excel->getActiveSheet()->setCellValue('G'.($inc+$extra),number_format($total['importe'],2));
+        $this->excel->getActiveSheet()->setCellValue('H'.($inc+$extra),number_format($total['facturas'],2));
+        $this->excel->getActiveSheet()->setCellValue('I'.($inc+$extra),number_format($total['depositos'],2));
+        $this->excel->getActiveSheet()->setCellValue('J'.($inc+$extra),number_format($total['saldo'],2));
+        
         $this->excel->getActiveSheet()->removeRow(2,1);
+        
         
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="Apoyos_'.now().'.xlsx"');
@@ -884,7 +918,7 @@ class Admin extends Admin_Controller {
                 
                 //$apoyo->comprobado = ($comprobado)?($comprobado->suma>$apoyo->importe?$apoyo->importe:$comprobado->suma):0;
                 
-                $apoyo->comprobado = $total_comprobado>$apoyo->importe?$apoyo->importe:$total_comprobado;
+                $apoyo->comprobado = $total_comprobado;//$total_comprobado>$apoyo->importe?$apoyo->importe:$total_comprobado;
                 $data[$apoyo->concepto][]=$apoyo;
             }
         }
