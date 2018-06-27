@@ -1,15 +1,18 @@
 <div class="content" ng-controller="IndexCtrl">
-
+     <div class="lead text-success"><?=lang('apoyos:title')?></div>
     <?php echo form_open('admin/apoyos/'.$anio, 'class="form-inline" method="get" ') ?>
             
                 
-                <div class="form-group col-md-5">
-                    <label for="f_concepto">Centro: </label>
+                <div class="form-group col-md-4">
                     
-                    <?=form_dropdown('f_centro',array(''=>' [ Todos ] ')+$centros,false,'class="form-control"')?>
+                    
+                    <?=form_dropdown('c',array(''=>' [ Todos los centros ] ')+$centros,false,'class="form-control"')?>
                 </div>
             
-    
+               <div class="form-group col-md-4">
+                   
+                    <?=form_input('q','','class="form-control" placeholder="Buscar ID o concepto"')?>
+               </div>
                 <button class="md-raised btn btn-default"><i class="fa fa-search"></i> Buscar</button>
                 <?php if($_GET):?>
                 <a href="<?=base_url('admin/apoyos/'.$anio)?>" class="md-raised btn btn-success"><i class="fa fa-refresh"></i> Mostrar todos</a>
@@ -101,6 +104,7 @@
                             <table class="table" width="100%">
                                 <thead>
                                  <tr>
+                                  <th width="10%">ID</th>
                                    <th width="14%">Fecha</th>
                                    <th >Centro</th>
                                   
@@ -122,6 +126,7 @@
                                             $total_comprobado += $deposito->comprobado;
                                             ?>
                                            <tr class="<?=$deposito->estatus=='Rechazado'?'danger':''?>">
+                                              <td><?=$deposito->id_apoyo?></td>
                                               <td><?=format_date_calendar($deposito->fecha_deposito)?></td>
                                               <td><?=$deposito->nombre_centro?></td>
                                              
@@ -175,6 +180,7 @@
                             <table class="table" width="100%">
                                 <thead>
                                  <tr>
+                                   <th width="10%">ID</th>
                                    <th width="14%">Fecha</th>
                                    <th >Centro</th>
                                   
@@ -196,6 +202,7 @@
                                             $total_comprobado += $deposito->comprobado;
                                             ?>
                                            <tr>
+                                              <td><?=$deposito->id_apoyo?></td>
                                               <td><?=format_date_calendar($deposito->fecha_deposito)?></td>
                                               <td><?=$deposito->nombre_centro?></td>
                                              

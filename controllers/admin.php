@@ -357,7 +357,8 @@ class Admin extends Admin_Controller {
             'Validados'  => array()
          );
          
-         $f_centro = $this->input->get('f_centro');
+         $centro  = $this->input->get('c');
+         $keyword = $this->input->get('q');
          
          $base_where = array(
          
@@ -365,9 +366,13 @@ class Admin extends Admin_Controller {
             'depositos.tipo' => 'apoyo' 
          );
          
-         if($f_centro)
+         if($centro)
          {
-            $base_where['centros.id'] = $f_centro;
+            $base_where['centros.id'] = $centro;
+         }
+         if($keyword)
+         {
+            $base_where['(default_depositos.concepto LIKE \'%'.$keyword.'%\' OR default_apoyos.id =\''.$keyword.'\')'] = NULL;
          }
          
          $depositos_bd= $this->db->select('*, depositos.id AS id_deposito,depositos.tipo AS tipo_pago,directores.id AS id_director, centros.nombre AS nombre_centro, directores.nombre AS nombre_director,apoyos.id AS id_apoyo')

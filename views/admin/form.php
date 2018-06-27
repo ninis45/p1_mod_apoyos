@@ -178,6 +178,8 @@
                                                  <input type="hidden" name="facturas[{{i}}][messages][{{j}}][code]" value="{{message.code}} "/>
                                                  <input type="hidden" name="facturas[{{i}}][messages][{{j}}][message]" value="{{message.message}} "/>
                                             </span>
+                                            
+                                            <br /> <small ng-if="file.xml_uuid">{{file.xml_uuid}}</small>
                                         </td>
                                         <td class="text-right">{{file.total|number:2}}</td>
                                         <?php if($this->method=='edit'):?>

@@ -180,7 +180,7 @@ class Apoyos_front extends Public_Controller
         );
         $folder = $this->file_folders_m->get_by_path('facturacion') OR show_error('No hay carpeta');
 
-        $result_xml =   Files::upload($folder->id,false,'xml',false,false,false);
+        $result_xml =   Files::upload($folder->id,false,'xml',false,false,false,'xml');
         $result_pdf =   Files::upload($folder->id,false,'pdf',false,false,false,'pdf');
 
 
@@ -189,21 +189,40 @@ class Apoyos_front extends Public_Controller
         {
 
              $valid_xml = Factura::ValidXML($result_xml['data']['id'],array('total'));
-
-             $result_xml['data']['total']      = $valid_xml['data']['total'];
-             $result_xml['data']['folio_uuid'] = $valid_xml['data']['UUID'];
-             $result['data']['xml'] = $result_xml;//Factura::ValidXML($result['data']['id'],array('total'));
              $result['data']['pdf'] = $result_pdf;
+             if($valid_xml['status'] && isset($valid_xml['data']['total']) && $valid_xml['data']['total'] > 0)
+             {
+                $result_xml['data']['total']      = $valid_xml['data']['total'];
+                $result_xml['data']['folio_uuid'] = $valid_xml['data']['UUID'];
+                $result['data']['xml'] = $result_xml;
+                
+                $result['status'] = true;
+             }
+             
+             else{
+                 Files::delete_file($result_pdf['data']['id']);
+                 Files::delete_file($result_xml['data']['id']);
+                 
+                 if(is_array($valid_xml['messages']))
+                 {
+                    foreach($valid_xml['messages'] as $msg){
+                        $result['message'] .= '<div class="alert alert-danger">'.$msg['message'].'</div>';
+                    }
+                 }
+                 else
+                    $result['message'] = '<div class="alert alert-danger">'.$valid_xml['message'].'</div>';
+             }
 
 
-
-             $result['status'] = true;
+             
         }
         else
         {
-            $result['message'] = '<div class="alert alert-danger">'.lang('apoyos:all_required').'</div>';
+            if(!$result_xml['status'] && $result_xml['message'])
+                $result['message'] = '<div class="alert alert-danger">'.$result_xml['message'].'</div>';
 
-
+            if(!$result_pdf['status'] && $result_pdf['message'])
+                $result['message'] .= '<div class="alert alert-danger">'.$result_pdf['message'].'</div>';
             if($result_pdf['status'])
             {
                 Files::delete_file($result_pdf['data']['id']);
